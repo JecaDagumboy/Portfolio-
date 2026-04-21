@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeca F. Dagumboy | IT Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root { 
+            --primary: #2563eb; 
+            --accent: #60a5fa; 
+            --dark: #0f172a; 
+            --light: #f8fafc; 
+            --transition: all 0.4s ease;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background-color: #0f172a; color: white; overflow-x: hidden; line-height: 1.6; }
+
+        /* Background Canvas */
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(to bottom, #0f172a, #1e293b); }
+
+        /* Intro Screen */
+        #intro-screen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #0f172a; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 10000; 
+            transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1), opacity 0.8s ease;
+            text-align: center;
+        }
+        #intro-screen.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .intro-pic { 
+            width: 180px; height: 180px; border-radius: 50%; border: 4px solid var(--primary); 
+            margin-bottom: 25px; object-fit: cover; box-shadow: 0 0 30px rgba(37, 99, 235, 0.3);
+            opacity: 0; animation: slideUp 1s ease-out forwards; animation-delay: 0.2s;
+        }
+        .intro-text-group { opacity: 0; animation: slideUp 1s ease-out forwards; animation-delay: 0.5s; }
+
+        /* Navigation */
+        nav { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); padding: 1rem 5%; display: flex; justify-content: flex-end; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .profile-nav { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .profile-nav img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+
+        /* General Layout */
+        section { padding: 80px 10%; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        h2 { text-align: center; margin-bottom: 40px; font-size: 2.2rem; color: var(--accent); }
+        .section-title-left { text-align: left; border-left: 5px solid var(--accent); padding-left: 15px; margin-bottom: 30px; }
+
+        /* Slider Logic (Used for Outputs, Certs, and Videos) */
+        .slider-container { overflow-x: auto; padding-bottom: 20px; scrollbar-width: none; -ms-overflow-style: none; cursor: grab; }
+        .slider-container::-webkit-scrollbar { display: none; }
+        .slider-track { display: flex; gap: 20px; width: max-content; padding: 10px; }
+        
+        /* Card Styling */
+        .card, .video-card { width: 320px; background: rgba(255,255,255,0.03); border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; transition: 0.3s; flex-shrink: 0; }
+        .card:hover, .video-card:hover { transform: translateY(-10px); border-color: var(--primary); background: rgba(255,255,255,0.06); }
+        .card img { width: 100%; height: 180px; object-fit: cover; cursor: zoom-in; }
+        .card-content { padding: 20px; }
+        .card-content h3 { color: var(--accent); margin-bottom: 8px; font-size: 1.1rem; }
+        .card-content p { font-size: 0.85rem; opacity: 0.8; }
+
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+        /* Links & UI */
+        .link-btn { display: flex; align-items: center; padding: 18px; text-decoration: none; color: white; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; transition: 0.3s; }
+        .link-btn:hover { background: var(--primary); transform: scale(1.02); }
+        .link-btn i { font-size: 1.2rem; margin-right: 15px; color: var(--accent); }
+
+        /* Modals & Chat */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); }
+        .modal-content { background: #141a26; margin: 50px auto; padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; position: relative; border: 1px solid var(--primary); }
+        .close-btn { position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px; }
+        .view-box { display: inline-block; border: 2px solid var(--primary); padding: 12px 30px; border-radius: 8px; cursor: pointer; margin-top: 20px; transition: var(--transition); text-transform: uppercase; font-weight: 600; }
+        .view-box:hover { background: var(--primary); color: white; }
+        
+        #chat-window { display: none; width: 320px; height: 450px; background: #1e293b; border: 1px solid var(--primary); border-radius: 15px; position: fixed; bottom: 90px; right: 20px; flex-direction: column; z-index: 9999; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; }
+        #chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; }
+        .bot-msg { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px 10px 10px 0; align-self: flex-start; max-width: 85%; }
+        .user-msg { background: var(--primary); padding: 10px; border-radius: 10px 10px 0 10px; align-self: flex-end; max-width: 85%; }
+        .zoom-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10001; justify-content: center; align-items: center; cursor: zoom-out; }
+        .zoom-overlay.active { display: flex; }
+        .zoom-overlay img { max-width: 90%; max-height: 85vh; border: 2px solid var(--primary); }
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen">
+        <img src="/meeeee.jpeg" class="intro-pic" alt="Jeca F. Dagumboy">
+        
+        <div class="intro-text-group">
+            <p style="color: var(--accent); letter-spacing: 2px; font-weight: 600;">WELCOME TO MY PORTFOLIO</p>
+            <h1 style="font-size: 3rem; margin: 10px 0;">Jeca F. Dagumboy</h1>
+            <p style="font-style: italic; color: #94a3b8; margin-bottom: 30px;">"Innovating one line of code at a time."</p>
+        </div>
+
+        <button class="view-box" onclick="explorePortfolio()" 
+                style="opacity: 0; animation: slideUp 0.8s ease-out forwards; animation-delay: 1s;">
+            Explore My Work
+        </button>
+    </div>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <nav>
+        <div class="profile-nav" onclick="openProfile()">
+            <span style="font-weight: 600; margin-right: 10px;">Jeca F. Dagumboy</span>
+            <img src="/meeeee.jpeg" alt="Profile">
+        </div>
+    </nav>
+
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeProfile()">&times;</span>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="/meeeee.jpeg" style="width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover;">
+                <h3 style="color: var(--accent); margin-top: 10px;">Personal Information</h3>
+            </div>
+            <div style="font-size: 0.9rem; line-height: 2;">
+                <p><i class="fas fa-user-graduate" style="color: var(--primary); width: 25px;"></i> <strong>Status:</strong> IT Student</p>
+                <p><i class="fas fa-envelope" style="color: var(--primary); width: 25px;"></i> <strong>Email:</strong> dagumboyjeca@gmail.com</p>
+                <p><i class="fas fa-phone" style="color: var(--primary); width: 25px;"></i> <strong>Phone:</strong> 09387072230</p>
+                <p><i class="fas fa-map-marker-alt" style="color: var(--primary); width: 25px;"></i> <strong>Location:</strong> Philippines</p>
+            </div>
+            <hr style="margin: 20px 0; opacity: 0.1;">
+            <form action="https://formspree.io/f/mjgjoprw" method="POST">
+                <input type="text" name="name" placeholder="Your Name" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none; background:#0f172a; color:white;" required>
+                <textarea name="message" rows="2" placeholder="Your Message" style="width:100%; padding:10px; border-radius:5px; border:none; background:#0f172a; color:white;"></textarea>
+                <button type="submit" class="view-box" style="width:100%; margin-top:10px; font-size:0.8rem;">Send Email</button>
+            </form>
+        </div>
+    </div>
+
+    <section id="about">
+        <div style="display: flex; align-items: center; gap: 50px; flex-wrap: wrap; justify-content: center;">
+            <div style="flex-shrink: 0;">
+                <img src="/meeeee.jpeg" alt="Jeca" style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid var(--primary); object-fit: cover; cursor: pointer;" onclick="zoomImage(this.src)">
+            </div>
+            <div style="max-width: 600px; text-align: left;">
+                <h2 style="text-align: left; margin-bottom: 20px;">About Me</h2>
+                <p style="opacity: 0.9; font-size: 1.1rem;">I am a dedicated IT Student with a passion for creative problem-solving. My goal is to bridge the gap between complex technical logic and user-friendly design. I specialize in turning ideas into interactive digital experiences.</p>
+                <div class="view-box" onclick="toggleResume()" id="resume-btn">VIEW RESUME</div>
+            </div>
+        </div>
+        <div id="resume-content" style="max-height: 0; overflow: hidden; transition: max-height 0.6s ease; text-align: center;">
+            <img src="RESUME_70599680-EB2E-4D5A-9B79-5EDE9CF17783.png" style="width: 100%; max-width: 800px; margin-top: 40px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); cursor: zoom-in;" onclick="zoomImage(this.src)">
+            <br>
+            <a href="/resume.png" download style="color: var(--accent); text-decoration: none; font-size: 0.9rem; margin-top: 15px; display: inline-block;">
+                <i class="fas fa-download"></i> Download Resume PDF
+            </a>
+        </div>
+    </section>
+
+    <section id="skills">
+        <h2 class="section-title-left">Technical Skills</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div class="skill-item" style="display: flex; align-items: center; padding: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px;">
+                <i class="fas fa-code" style="font-size: 1.8rem; color: var(--accent); margin-right: 20px;"></i>
+                <div>
+                    <strong style="display: block;">Web Development</strong>
+                    <span style="font-size: 0.85rem; opacity: 0.7;">HTML5, CSS3, JavaScript</span>
+                </div>
+            </div>
+            <div class="skill-item" style="display: flex; align-items: center; padding: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px;">
+                <i class="fas fa-tools" style="font-size: 1.8rem; color: var(--accent); margin-right: 20px;"></i>
+                <div>
+                    <strong style="display: block;">IT Troubleshooting</strong>
+                    <span style="font-size: 0.85rem; opacity: 0.7;">Hardware & Logic Diagnostics</span>
+                </div>
+            </div>
+            <div class="skill-item" style="display: flex; align-items: center; padding: 25px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px;">
+                <i class="fas fa-pen-nib" style="font-size: 1.8rem; color: var(--accent); margin-right: 20px;"></i>
+                <div>
+                    <strong style="display: block;">UI/UX Design</strong>
+                    <span style="font-size: 0.85rem; opacity: 0.7;">Figma & Photoshop Prototyping</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="outputs">
+        <h2>My Outputs</h2>
+        <div class="slider-container">
+            <div class="slider-track">
+                <div class="card">
+                    <img src="BANNER_F9AD01EB-A0BD-42F5-B1FC-E9CF7225B9D6.jpeg" alt="Banner Design" onclick="zoomImage(this.src)">
+                    <div class="card-content">
+                        <h3>Creative Banner</h3>
+                        <p>Visual branding and digital asset design created using Adobe Photoshop.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="Checkyourheart_2C154741-DF9A-45A5-90C7-4E676DDD8363.png" alt="LCD Design" onclick="zoomImage(this.src)">
+                    <div class="card-content">
+                        <h3>LCD Interface</h3>
+                        <p>Custom User Interface design for BP Vendo technical hardware systems.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="FIGMA_E2971A93-3EDB-42AF-B30C-C131A7FC1500.jpeg" alt="Figma Design" onclick="zoomImage(this.src)">
+                    <div class="card-content">
+                        <h3>Figma Prototype</h3>
+                        <p>Interactive high-fidelity mockup for a personal portfolio web application.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="certifications">
+        <h2 class="section-title-left">Certifications</h2>
+        <div class="slider-container">
+            <div class="slider-track">
+                <div class="card">
+                    <img src="CISCOCERTIFICATE_55256E2A-BAEE-4BCF-B256-101EE0BD9A50.jpeg" alt="Cisco Mo Certification" onclick="zoomImage(this.src)" style="height: 180px; width: 100%; object-fit: cover; cursor: zoom-in;">
+                    <div class="card-content">
+                        <h3>Cisco Mo Certification</h3>
+                        <p>Verified proficiency in networking fundamentals and technical infrastructure.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="CERTIFICATE (2)_B98F70EB-A20C-4108-8DBA-17741AFA1AFF.jpeg" alt="Technical Seminar" onclick="zoomImage(this.src)" style="height: 180px; width: 100%; object-fit: cover; cursor: zoom-in;">
+                    <div class="card-content">
+                        <h3>Technical Seminar</h3>
+                        <p>Completed professional training on emerging IT solutions and methodologies.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="CERTIFICATE (1)_ACD04A0F-D24A-4A8B-B50B-CFFC23058A7E.jpeg" alt="IT Excellence" onclick="zoomImage(this.src)" style="height: 180px; width: 100%; object-fit: cover; cursor: zoom-in;">
+                    <div class="card-content">
+                        <h3>IT Excellence Award</h3>
+                        <p>Recognition for academic performance and technical skills application.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+    <section id="videos">
+        <h2>Video Tutorials</h2>
+        <div class="slider-container">
+            <div class="slider-track">
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/FTFaQWpkyv8" allowfullscreen></iframe>
+                    </div>
+                    <div class="card-content">
+                        <h3>Figma Essentials</h3>
+                        <p>Mastering UI/UX prototyping and layout design for modern web apps.</p>
+                    </div>
+                </div>
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/zJSY8tJYnC4" allowfullscreen></iframe>
+                    </div>
+                    <div class="card-content">
+                        <h3>Canva Graphic Design</h3>
+                        <p>A guide to creating professional banners and digital branding assets.</p>
+                    </div>
+                </div>
+                <div class="video-card">
+                    <div class="video-container">
+                        <iframe src="https://www.youtube.com/embed/RGOj5yH7evk" allowfullscreen></iframe>
+                    </div>
+                    <div class="card-content">
+                        <h3>GitHub Workflow</h3>
+                        <p>How to manage repositories, branches, and deploy projects efficiently.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="links">
+        <h2 class="section-title-left">Quick Access Links</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px;">
+            <a href="https://canva.link/4elo9o0qhw24php" target="_blank" class="link-btn">
+                <i class="fas fa-palette"></i> 
+                <div>
+                    <strong>Canva Portfolio</strong>
+                    <p style="font-size: 0.7rem; opacity: 0.6;">Graphic Design Collection</p>
+                </div>
+            </a>
+            <a href="https://jecadagumboy.github.io/jeca/" target="_blank" class="link-btn">
+                <i class="fab fa-github"></i> 
+                <div>
+                    <strong>GitHub (Main)</strong>
+                    <p style="font-size: 0.7rem; opacity: 0.6;">Primary Repositories</p>
+                </div>
+            </a>
+            <a href="https://jecadagumboy.github.io/CALORIES-TRACKER-" target="_blank" class="link-btn">
+                <i class="fab fa-github-alt"></i> 
+                <div>
+                    <strong>GitHub (Secondary)</strong>
+                    <p style="font-size: 0.7rem; opacity: 0.6;">Source Code & Lab Tasks</p>
+                </div>
+            </a>
+            <a href="https://www.figma.com/proto/Dk5x5spF4uXoDJEZZXgfBy" target="_blank" class="link-btn">
+                <i class="fab fa-figma"></i> 
+                <div>
+                    <strong>Figma Prototype</strong>
+                    <p style="font-size: 0.7rem; opacity: 0.6;">Interactive UI Mockup</p>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section id="contact" style="text-align: center; background: rgba(255,255,255,0.01);">
+        <h2>Get In Touch</h2>
+        <p style="margin-bottom: 30px; opacity: 0.8;">Interested in collaborating? Reach out through any of these platforms.</p>
+        <div style="display: flex; justify-content: center; gap: 40px; font-size: 2.8rem;">
+            <a href="mailto:dagumboyjeca@gmail.com" title="Gmail" style="color: white; transition: 0.3s;"><i class="fab fa-google"></i></a>
+            <a href="https://www.facebook.com/jecaflores19" target="_blank" title="Facebook" style="color: white; transition: 0.3s;"><i class="fab fa-facebook"></i></a>
+            <a href="https://www.instagram.com/khaiyyzz" target="_blank" title="Instagram" style="color: white; transition: 0.3s;"><i class="fab fa-instagram"></i></a>
+        </div>
+    </section>
+
+    <footer style="text-align: center; padding: 60px 10%; background: #0b1120; border-top: 1px solid rgba(255,255,255,0.05);">
+        <p style="font-weight: 600; letter-spacing: 2px; color: var(--accent); text-transform: uppercase;">Jeca F. Dagumboy</p>
+        <p style="font-size: 0.8rem; margin: 10px 0; opacity: 0.5;">&copy; 2026 Portfolio. Built with passion and code.</p>
+    </footer>
+    <div id="chat-wrapper" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+        <div id="chat-toggle" onclick="toggleChat()" style="width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <i class="fas fa-comment-dots" style="color: white; font-size: 24px;"></i>
+        </div>
+        <div id="chat-window">
+            <div style="background: var(--primary); padding: 15px; color: white; font-weight: 600; display: flex; justify-content: space-between;">
+                <span>Portfolio Assistant</span>
+                <i class="fas fa-times" onclick="toggleChat()" style="cursor: pointer; opacity: 0.7;"></i>
+            </div>
+            <div id="chat-messages">
+                <div class="bot-msg">Hi! I'm Jeca's digital assistant. Ask me about her skills, outputs, certifications, or social links!</div>
+            </div>
+            <div style="padding: 10px; background: rgba(0,0,0,0.2); display: flex; gap: 5px;">
+                <input type="text" id="chat-input" placeholder="Ask a question..." style="flex: 1; background: rgba(255,255,255,0.1); border: none; padding: 10px 15px; color: white; border-radius: 20px; outline: none;">
+                <button onclick="handleChat()" style="background: var(--primary); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer;"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="zoomOverlay" class="zoom-overlay" onclick="closeZoom()">
+        <img id="zoomedImg" src="" alt="Zoomed View">
+    </div>
+
+    <script>
+        // --- 1. UI & Navigation Controls ---
+        document.body.style.overflow = "hidden"; 
+
+        function explorePortfolio() {
+            document.getElementById("intro-screen").classList.add("hidden");
+            document.body.style.overflow = "auto";
+        }
+
+        function openProfile() { document.getElementById("profileModal").style.display = "block"; }
+        function closeProfile() { document.getElementById("profileModal").style.display = "none"; }
+
+        function toggleResume() {
+            const content = document.getElementById("resume-content");
+            const btn = document.getElementById("resume-btn");
+            if (!content.style.maxHeight || content.style.maxHeight === "0px") {
+                content.style.maxHeight = "1200px";
+                btn.innerText = "HIDE RESUME";
+            } else {
+                content.style.maxHeight = "0px";
+                btn.innerText = "VIEW RESUME";
+            }
+        }
+
+        function zoomImage(src) {
+            const overlay = document.getElementById('zoomOverlay');
+            document.getElementById('zoomedImg').src = src;
+            overlay.classList.add('active');
+        }
+        function closeZoom() { document.getElementById('zoomOverlay').classList.remove('active'); }
+
+        // --- 2. Particle Background Animation ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let dots = [];
+
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            dots = [];
+            for (let i = 0; i < 60; i++) {
+                dots.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    size: Math.random() * 1.5 + 0.5
+                });
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "rgba(100, 150, 255, 0.12)";
+            dots.forEach(d => {
+                d.x += d.vx; d.y += d.vy;
+                if (d.x < 0 || d.x > canvas.width) d.vx *= -1;
+                if (d.y < 0 || d.y > canvas.height) d.vy *= -1;
+                ctx.beginPath(); ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2); ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        // --- 3. Chatbot Interactive Logic ---
+        function toggleChat() {
+            const win = document.getElementById("chat-window");
+            win.style.display = (win.style.display === "flex") ? "none" : "flex";
+        }
+
+        function handleChat() {
+            const input = document.getElementById("chat-input");
+            const msg = input.value.trim().toLowerCase();
+            if (!msg) return;
+
+            const container = document.getElementById("chat-messages");
+            const userDiv = document.createElement("div");
+            userDiv.className = "user-msg";
+            userDiv.innerText = input.value;
+            container.appendChild(userDiv);
+            input.value = "";
+
+            let reply = "I'm not sure about that. Try asking about skills, outputs, or contact info!";
+
+            if (msg.includes("hi") || msg.includes("hello")) {
+                reply = "Hello! How can I help you explore Jeca's work today?";
+            } else if (msg.includes("skill")) {
+                reply = "Jeca specializes in Web Development, IT Troubleshooting, and UI/UX design.";
+            } else if (msg.includes("cert") || msg.includes("cisco")) {
+                reply = "Jeca holds a Cisco Mo Certification and various Technical Seminar certificates.";
+            } else if (msg.includes("project") || msg.includes("output")) {
+                reply = "You can see her Banners, LCD Designs, and Figma Prototypes in the 'My Outputs' slider!";
+            } else if (msg.includes("contact") || msg.includes("email")) {
+                reply = "Reach Jeca at dagumboyjeca@gmail.com or via her social links below.";
+            } else if (msg.includes("resume")) {
+                reply = "Click 'VIEW RESUME' in the About section to see her full CV.";
+            }
+
+            setTimeout(() => {
+                const botDiv = document.createElement("div");
+                botDiv.className = "bot-msg";
+                botDiv.innerText = reply;
+                container.appendChild(botDiv);
+                container.scrollTop = container.scrollHeight;
+            }, 600);
+        }
+
+        document.getElementById("chat-input").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") handleChat();
+        });
+
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        animate();
+    </script>
+</body>
+</html>
